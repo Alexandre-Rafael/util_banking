@@ -1,0 +1,31 @@
+{% extends 'core/base.html' %}
+
+{% block head_title %}Relatório de Transações{% endblock %}
+
+{% block content %}
+<h1 class="form-title">Relatório de Transações</h1>
+<table class="transaction-table">
+    <thead class="table-header">
+    <tr class="header-row">
+        <th class="table-header-cell">Descrição da Transação</th>
+        <th class="table-header-cell">Data</th>
+        <th class="table-header-cell">Quantia</th>
+        <th class="table-header-cell">Saldo Após Transação</th>
+    </tr>
+    </thead>
+    <tbody>
+    {% for transacao in object_list %}
+    <tr class="table-row {% cycle 'row-odd' 'row-even' %}">
+        <td class="table-cell">{{ transacao.tipo_transacao_display }}</td>
+        <td class="table-cell">{{ transacao.data_hora }}</td>
+        <td class="table-cell">R$ {{ transacao.quantia }}</td>
+        <td class="table-cell">R$ {{ transacao.saldo_apos_transacao }}</td>
+    </tr>
+    {% endfor %}
+    <tr class="table-footer-row">
+        <th class="table-footer-cell" colspan="3">Saldo Final</th>
+        <th class="table-footer-cell">R$ {{ conta.saldo }}</th>
+    </tr>
+    </tbody>
+</table>
+{% endblock %}

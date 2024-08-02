@@ -1,0 +1,13 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block head_title %}Sistema Bancário{% endblock %}
+
+{% block content %}
+<div class="main-container">
+    <div class="left-container">
+        <h1 class="titulo-main">Bem vindo ao UtilBank</h1>
+        <a href="{% url 'contas:registro_usuario' %}" class="button center-button">Abrir uma conta</a>
+    </div>
+</div>
+{% endblock %}

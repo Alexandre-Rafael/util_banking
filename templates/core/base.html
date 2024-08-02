@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block head_title %}Sistema Bancário{% endblock %}</title>
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+    {% block head_extra %}{% endblock %}
+</head>
+<body>
+    <nav class="navbar">
+        <div class="navbar-brand">
+            <img src="{% static 'images/logo-navbar.png' %}" alt="Logo" class="logo">
+        </div>
+        <div class="navbar-menu">
+            {% if request.user.is_authenticated %}
+                <div class="navbar-links">
+                    <a href="{% url 'transacoes:depositar_dinheiro' %}" class="navbar-item">Depósito</a>
+                    <a href="{% url 'transacoes:sacar_dinheiro' %}" class="navbar-item">Saque</a>
+                    <a href="{% url 'transacoes:transferir_dinheiro' %}" class="navbar-item">Transferência</a>
+                    <a href="{% url 'transacoes:relatorio_transacoes' %}" class="navbar-item">Relatório de Transações</a>
+                </div>
+                <div class="navbar-end">
+                    <a href="{% url 'contas:logout_usuario' %}" class="navbar-button">Sair</a>
+                </div>
+            {% else %}
+                <div class="navbar-end">
+                    <a href="{% url 'contas:login_usuario' %}" class="navbar-button">Entrar</a>
+                    <a href="{% url 'contas:registro_usuario' %}" class="navbar-button">Registrar</a>
+                </div>
+            {% endif %}
+        </div>
+    </nav>
+    <div class="container" style="background-image: url('{% static 'images/main_image.jpg' %}'); background-size: cover; background-position: center; max-width: 100%; height: calc(100vh - 70px); margin: 0; padding: 0;">
+        {% block content %}{% endblock %}
+    </div>
+    {% block footer_extra %}{% endblock %}
+</body>
+</html>

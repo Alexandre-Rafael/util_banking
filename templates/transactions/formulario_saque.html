@@ -1,0 +1,47 @@
+{% extends 'core/base.html' %}
+
+{% block head_title %}Sacar Dinheiro{% endblock %}
+
+{% block content %}
+<div class="saldo-container">
+    Olá, {{ usuario.first_name }}! Seu saldo é: R$ {{ saldo }}
+</div>
+
+<!-- Adicionando as mensagens de feedback -->
+{% if messages %}
+    <ul class="messages">
+        {% for message in messages %}
+            <li class="message {% if message.tags %}{{ message.tags }}{% endif %}">
+                {{ message }}
+            </li>
+        {% endfor %}
+    </ul>
+{% endif %}
+
+<div class="center-container">
+    <h1 class="center-title">{{ titulo }}</h1>
+    <div class="center-form">
+        <form method="post" class="form">
+            {% csrf_token %}
+            {% for hidden_field in form.hidden_fields %}
+                {{ hidden_field.errors }}
+                {{ hidden_field }}
+            {% endfor %}
+            {% for field in form.visible_fields %}
+            <div class="form-group">
+                <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+                {{ field }}
+                {% if field.errors %}
+                    {% for error in field.errors %}
+                        <p class="form-error">{{ error }}</p>
+                    {% endfor %}
+                {% endif %}
+            </div>
+            {% endfor %}
+            <div class="form-actions">
+                <button class="form-button" type="submit">Sacar</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

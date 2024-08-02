@@ -1,0 +1,42 @@
+{% extends 'core/base.html' %}
+
+{% block head_title %}Sistema Bancário{% endblock %}
+
+{% block content %}
+{% if registration_form.non_field_errors %}
+    {% for error in registration_form.non_field_errors %}
+    <div class="error-message" role="alert">
+        <p class="error-title">Erro!</p>
+        <p class="error-text">{{ error }}</p>
+    </div>
+    {% endfor %}
+{% endif %}
+<h1 class="form-title">Cadastrar</h1>
+<div class="form-container">
+    <form method="post" class="form">
+        {% csrf_token %}
+        {% for hidden_field in registration_form.hidden_fields %}
+            {{ hidden_field.errors }}
+            {{ hidden_field }}
+        {% endfor %}
+        {% for field in registration_form.visible_fields %}
+        <div class="form-group">
+            <label class="form-label" for="{{ field.id_for_label }}">
+                {{ field.label }}
+            </label>
+            {{ field }}
+            {% if field.errors %}
+                {% for error in field.errors %}
+                <p class="form-error">{{ error }}</p>
+                {% endfor %}
+            {% endif %}
+        </div>
+        {% endfor %}
+        <div class="form-actions">
+            <button class="form-button" type="submit">
+                Cadastrar
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}

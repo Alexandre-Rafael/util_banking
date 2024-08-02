@@ -1,0 +1,23 @@
+<nav class="navbar">
+    <div class="navbar-brand">
+        <span>Sistema Bancário</span>
+    </div>
+    <div class="navbar-menu">
+        {% if request.user.is_authenticated %}
+            <div class="navbar-links">
+                <a href="{% url 'transactions:deposit_money' %}" class="navbar-item">Depósito</a>
+                <a href="{% url 'transactions:withdraw_money' %}" class="navbar-item">Saque</a>
+                <a href="{% url 'transactions:transfer_money' %}" class="navbar-item">Transferência</a>
+                <a href="{% url 'transactions:transaction_report' %}" class="navbar-item">Relatório de Transações</a>
+            </div>
+            <div class="navbar-end">
+                <a href="{% url 'contas:logout_usuario' %}" class="navbar-button">Sair</a>
+            </div>
+        {% else %}
+            <div class="navbar-end">
+                <a href="{% url 'contas:login_usuario' %}" class="navbar-button">Entrar</a>
+                <a href="{% url 'contas:registro_usuario' %}" class="navbar-button">Registrar</a>
+            </div>
+        {% endif %}
+    </div>
+</nav>

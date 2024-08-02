@@ -2,6 +2,8 @@ from django.contrib.auth.models import AbstractUser
 from django.db import models
 from .constants import OPCOES_GENERO
 from .managers import GerenciadorUsuarios
+from django.db import IntegrityError
+
 
 class Usuario(AbstractUser):
     username = None  # Removendo o campo username
@@ -23,7 +25,7 @@ class ContaBancariaUsuario(models.Model):
         related_name='conta',
         on_delete=models.CASCADE,
     )
-    numero_conta = models.CharField(max_length=11, unique=True)  # Mantém o CPF como número da conta
+    numero_conta = models.CharField(max_length=11, unique=True)
     genero = models.CharField(max_length=1, choices=OPCOES_GENERO)
     data_nascimento = models.DateField(null=True, blank=True)
     saldo = models.DecimalField(
@@ -36,11 +38,20 @@ class ContaBancariaUsuario(models.Model):
         help_text='O número do mês que o cálculo de juros começará'
     )
     data_deposito_inicial = models.DateField(null=True, blank=True)
+    versao = models.PositiveIntegerField(default=0)  # Campo de versão
 
     def save(self, *args, **kwargs):
-        # Aqui garantimos que o CPF seja utilizado como número da conta, caso não esteja definido
+        if not self._state.adding:  # Verifica se não é uma nova instância
+            original = ContaBancariaUsuario.objects.select_for_update().get(pk=self.pk)
+            if original.versao != self.versao:
+                raise IntegrityError("A versão do objeto foi modificada.")
+
+            # Incrementa a versão toda vez que o registro é salvo, exceto na criação
+            self.versao = models.F('versao') + 1
+
         if not self.numero_conta:
-            self.numero_conta = self.usuario.cpf  
+            self.numero_conta = self.usuario.cpf
+
         super().save(*args, **kwargs)
 
     def __str__(self):

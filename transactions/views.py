@@ -88,15 +88,29 @@ class DepositarDinheiroView(CriarTransacaoMixin):
         quantia = form.cleaned_data.get('quantia')
         conta = self.request.user.conta
 
-        # Atualiza o saldo da conta
-        conta.saldo += quantia
-        conta.save(update_fields=['saldo'])
+        # Verifica a versão antes de atualizar
+        versao_atual = conta.versao
+        rows_updated = ContaBancariaUsuario.objects.filter(
+            pk=conta.pk,
+            versao=versao_atual
+        ).update(
+            saldo=models.F('saldo') + quantia,
+            versao=models.F('versao') + 1
+        )
+
+        if rows_updated == 0:
+            # Se nenhuma linha foi atualizada, significa que houve um conflito de versão
+            messages.error(self.request, 'Conflito de versão detectado. Por favor, tente novamente.')
+            return self.form_invalid(form)
+
+        # Recarrega a instância da conta com os valores atualizados
+        conta.refresh_from_db()
 
         # Cria a transação para o depósito
         Transacao.objects.create(
             conta=conta,
             quantia=quantia,
-            saldo_apos_transacao=conta.saldo,
+            saldo_apos_transacao=conta.saldo,  # Usando o saldo atualizado
             tipo_transacao=DEPOSITO,
             data_hora=timezone.now()
         )
@@ -106,7 +120,6 @@ class DepositarDinheiroView(CriarTransacaoMixin):
             f'R$ {quantia} foi depositado na sua conta com sucesso'
         )
 
-        # Renderiza novamente a mesma página com uma mensagem de sucesso
         return self.render_to_response(self.get_context_data(form=form))
 
 
@@ -128,14 +141,29 @@ class SacarDinheiroView(CriarTransacaoMixin):
             messages.error(self.request, 'Fundos insuficientes')
             return self.form_invalid(form)
 
-        conta.saldo -= quantia
-        conta.save(update_fields=['saldo'])
+        # Verifica a versão antes de atualizar
+        versao_atual = conta.versao
+        rows_updated = ContaBancariaUsuario.objects.filter(
+            pk=conta.pk,
+            versao=versao_atual
+        ).update(
+            saldo=models.F('saldo') - quantia,
+            versao=models.F('versao') + 1
+        )
+
+        if rows_updated == 0:
+            # Se nenhuma linha foi atualizada, significa que houve um conflito de versão
+            messages.error(self.request, 'Conflito de versão detectado. Por favor, tente novamente.')
+            return self.form_invalid(form)
+
+        # Recarrega a instância da conta com os valores atualizados
+        conta.refresh_from_db()
 
         # Criar a transação
         Transacao.objects.create(
             conta=conta,
             quantia=-quantia,
-            saldo_apos_transacao=conta.saldo,
+            saldo_apos_transacao=conta.saldo,  # Usando o saldo atualizado
             tipo_transacao=SAQUE,
             data_hora=timezone.now()
         )
@@ -145,8 +173,8 @@ class SacarDinheiroView(CriarTransacaoMixin):
             f'R$ {quantia} foi sacado da sua conta com sucesso'
         )
 
-        # Renderiza novamente a mesma página com uma mensagem de sucesso
         return self.render_to_response(self.get_context_data(form=form))
+
 
 
 class TransferirDinheiroView(LoginRequiredMixin, FormView):
@@ -184,12 +212,33 @@ class TransferirDinheiroView(LoginRequiredMixin, FormView):
             messages.error(self.request, 'Fundos insuficientes.')
             return self.form_invalid(form)
 
-        # Processar a transferência
-        conta_origem.saldo -= quantia
-        conta_recebedora.saldo += quantia
+        # Processar a transferência com verificação de versão para ambas as contas
+        versao_origem = conta_origem.versao
+        versao_recebedora = conta_recebedora.versao
 
-        conta_origem.save(update_fields=['saldo'])
-        conta_recebedora.save(update_fields=['saldo'])
+        rows_updated_origem = ContaBancariaUsuario.objects.filter(
+            pk=conta_origem.pk,
+            versao=versao_origem
+        ).update(
+            saldo=models.F('saldo') - quantia,
+            versao=models.F('versao') + 1
+        )
+
+        rows_updated_recebedora = ContaBancariaUsuario.objects.filter(
+            pk=conta_recebedora.pk,
+            versao=versao_recebedora
+        ).update(
+            saldo=models.F('saldo') + quantia,
+            versao=models.F('versao') + 1
+        )
+
+        if rows_updated_origem == 0 or rows_updated_recebedora == 0:
+            messages.error(self.request, 'Conflito de versão detectado. Por favor, tente novamente.')
+            return self.form_invalid(form)
+
+        # Recarrega as instâncias das contas com os valores atualizados
+        conta_origem.refresh_from_db()
+        conta_recebedora.refresh_from_db()
 
         # Criar a transação de envio (para a conta origem)
         Transacao.objects.create(
@@ -210,8 +259,7 @@ class TransferirDinheiroView(LoginRequiredMixin, FormView):
         )
 
         messages.success(self.request, f'R$ {quantia} foi transferido com sucesso para o CPF {cpf_recebedor}')
-        
-        # Renderiza novamente a mesma página com uma mensagem de sucesso
+
         return self.render_to_response(self.get_context_data(form=form))
 
     def form_invalid(self, form):
